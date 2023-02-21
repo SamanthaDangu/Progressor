@@ -1,4 +1,10 @@
 <template>
+  <Modal
+    v-if="isInEditMode"
+    :task="taskToEdit"
+    @updatetask="updateTask($event)"
+    @cancel="cancelEdit"
+  />
   <h3>Toutes les taches</h3>
   <input type="text" placeholder="Filtrer" v-model="letters" @keyup="filter" />
   <div class="radioFilters">
@@ -52,14 +58,20 @@
 <script>
 import { ref, watch } from "vue";
 import tasksService from "@/services/tasks.js";
+import Modal from "../components/Modal.vue";
 
 export default {
+  components: {
+    Modal,
+  },
   setup() {
     const tasks = ref([]);
     const letters = ref("");
     const selectedTemporality = ref("");
     tasks.value = tasksService.read();
     let tasksFiltered = ref([]);
+    let isInEditMode = ref(false);
+    let taskToEdit = ref([]);
     filter();
 
     function convertCase(temporality) {
@@ -79,6 +91,24 @@ export default {
           (t) => t.temporality === selectedTemporality.value
         );
       }
+    }
+
+    function toggle(task) {
+      console.log("toggle task", task)
+      taskToEdit.value = task;
+      isInEditMode.value = true;
+    }
+
+    function updateTask(task) {
+      console.log("updateTask", task)
+      tasksService.updateTask(task);
+      tasks.value = tasksService.read();
+      cancelEdit();
+    }
+
+    function cancelEdit() {
+      isInEditMode.value = false;
+      taskToEdit.value = null;
     }
 
     function deleteTask(id) {
@@ -105,6 +135,11 @@ export default {
       tasksFiltered,
       selectedTemporality,
       deleteTask,
+      taskToEdit,
+      toggle,
+      updateTask,
+      cancelEdit,
+      isInEditMode
     };
   },
 };
